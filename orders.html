@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" class="hydrated">
+
+<head>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="./all.css">
+    <link rel="stylesheet" href="./alll.css">
+</head>
+
+<body id="top">
+    <main>
+        <div class="formbold-form-wrapper">
+            <div class="mb-20 flex align-items space-between">
+                <div class="profile-icon" onclick="toggleDropdown()">
+                    <span>P</span>
+                    <div id="dropdown" class="dropdown-menu">
+                        <a href="./index.html">Home</a>
+                        <a href="#profile">Profile</a>
+                        <a href="#settings">Settings</a>
+                        <a href="#logout">Logout</a>
+                    </div>
+                </div>
+                <div>
+                    <label class="day-night">
+                        <input type="checkbox" checked />
+                        <div></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap center">
+                <section class="overflow border-div-table c8080800a">
+                    <div class="tbl-header">
+                        <table cellpadding="0" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>City</th>
+                                    <th>Phone Number</th>
+                                    <th>Telephone Number</th>
+                                    <th>Shipping Fees</th>
+                                    <th>Total Price</th>
+                                    <th>More</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div id="orders-content" class="tbl-content">
+                        <div id="preloader" class="preloader hidden">
+                            <div class="spinner"></div>
+                        </div>
+
+                        <table cellpadding="0" cellspacing="0">
+                            <tbody id="orders-table-body">
+                                <!-- Data will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                        <script>
+
+                        </script>
+
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Fetch and display orders data
+            async function fetchOrders() {
+                const preloader = document.getElementById("preloader");
+                const ordersContent = document.getElementById("orders-content");
+
+                try {
+                    // Show the preloader
+                    preloader.classList.remove("hidden");
+
+
+                    const response = await fetch('https://queen-s-footwear-default-rtdb.firebaseio.com/orders.json');
+                    const data = await response.json();
+
+                    const ordersTableBody = document.getElementById('orders-table-body');
+                    ordersTableBody.innerHTML = ''; // Clear existing content
+
+                    // Reverse the order of orders
+                    const reversedOrders = Object.entries(data).reverse();
+
+                    for (const [orderId, order] of reversedOrders) {
+                        const customerName = `${order.personal_info.firstName} ${order.personal_info.lastName}`;
+                        const email = order.personal_info.email;
+                        const city = order.personal_info.city;
+                        const phoneNumber = order.personal_info.phoneNumber;
+                        const housenumber = order.personal_info.housePhoneNumber;
+
+                        const totalPrice = order.cart.reduce((sum, item) => sum + parseFloat(item.price.replace(' EGP', '')), 0) + order.shippingFees;
+
+                        const row = document.createElement('tr');
+                        row.classList.add('point');
+                        row.setAttribute('data-order-id', orderId); // Adding data-order-id attribute
+
+                        // Apply color class based on progress
+                        if (order.progress === 'accepted') {
+                            row.classList.add('green-tr');
+                        } else if (order.progress === 'notaccepted') {
+                            row.classList.add('red-tr');
+                        } else {
+                            row.classList.add('yellow-tr');
+                        }
+
+                        row.innerHTML = `
+                        <td>${orderId}</td>
+                        <td>${customerName}</td>
+                        <td>${email}</td>
+                        <td>${city}</td>
+                        <td>${phoneNumber}</td>
+                        <td>${housenumber}</td>
+                        <td>${order.shippingFees} EGP</td>
+                        <td>${totalPrice} EGP</td>
+                        <td class="flex center align items inherit-color">
+                            <button type="button" class="formbold-form-label addbtn pointer open-order-btn">
+                                <i class="bi bi-plus-circle point" data-order-id="${orderId}"></i>
+                            </button>
+                            <button type="button" class="formbold-form-label addbtn pointer accept-order-btn" data-order-id="${orderId}" id="Activate" onclick="updateOrderStatus('${orderId}', 'accepted', event)">
+                                <i class="bi bi-box-fill pointer"></i>
+                            </button>
+                            <button type="button" class="formbold-form-label addbtn pointer deaccept-order-btn" data-order-id="${orderId}" id="Deactivate" onclick="updateOrderStatus('${orderId}', 'notaccepted', event)">
+                                <i class="bi bi-x-circle pointer"></i>
+                            </button>
+                        </td>
+                    `;
+                        ordersTableBody.appendChild(row);
+                    }
+
+                    // Add click event listener to all rows
+                    document.querySelectorAll('tr.point').forEach(row => {
+                        row.addEventListener('click', toggleOrderDetails);
+                    });
+
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                }  // Ensure the preloader is displayed for at least 3 seconds
+                setTimeout(() => {
+                    preloader.classList.add("hidden");
+
+                }, 1000);
+            }
+
+            fetchOrders();
+
+            // Dark & Light toggle
+            document.querySelector(".day-night input").addEventListener("change", () => {
+                document.querySelector("body").classList.toggle("dark");
+            });
+        });
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('dropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', function (event) {
+            const profileIcon = document.querySelector('.profile-icon');
+            const dropdown = document.getElementById('dropdown');
+            if (!profileIcon.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        async function toggleOrderDetails(event) {
+            const row = event.currentTarget;
+            const orderId = row.getAttribute('data-order-id');
+            const icon = row.querySelector('i.bi');
+
+            if (icon && icon.classList.contains('bi-plus-circle')) {
+                // Expand to show cart items
+                try {
+                    const response = await fetch(`https://queen-s-footwear-default-rtdb.firebaseio.com/orders/${orderId}.json`);
+                    const order = await response.json();
+
+                    if (!order || !order.cart) {
+                        console.error('Order or cart is null or undefined.');
+                        return;
+                    }
+
+                    const cartItems = order.cart.map(item => `
+                    <tr class="cart-item">
+                        <td colspan="9">
+                            <div style="display: flex; align-items: center;width: max-content;">
+                                <img src="${item.photourl}" alt="${item.title}" style="width: 50px; height: 50px; margin-right: 10px;">
+                                <div>
+                                    <p> ${item.id}</p>
+                                    <p> ${item.brand}</p>
+                                    <p> ${item.productColor}</p>
+                                    <p> ${item.productSize}</p>
+                                    <p> ${item.price}</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.classList.add('order-details');
+                    detailsRow.innerHTML = `
+                    <td colspan="9">
+                        <table style="width: 100%;">
+                            <tbody class="flex flex-wrap">
+                                ${cartItems}
+                            </tbody>
+                        </table>
+                    </td>
+                `;
+                    row.after(detailsRow);
+
+                    // Change icon to minus
+                    icon.classList.remove('bi-plus-circle');
+                    icon.classList.add('bi-dash-circle');
+                } catch (error) {
+                    console.error('Error fetching order details:', error);
+                }
+            } else if (icon && icon.classList.contains('bi-dash-circle')) {
+                // Collapse to hide cart items
+                row.nextElementSibling.remove();
+                icon.classList.remove('bi-dash-circle');
+                icon.classList.add('bi-plus-circle');
+            }
+        }
+
+        // async function updateOrderStatus(orderId, status, event) {
+        //     event.stopPropagation(); // Prevent row click event
+        //     try {
+        //         const response = await fetch(`https://queen-s-footwear-default-rtdb.firebaseio.com/orders/${orderId}.json`, {
+        //             method: 'PATCH',
+        //             headers: {
+        //                 'Content-Type': 'application/json'
+        //             },
+        //             body: JSON.stringify({ progress: status })
+        //         });
+
+        //         if (!response.ok) {
+        //             throw new Error('Failed to update order status');
+        //         }
+
+        //         Swal.fire({
+        //             title: 'Success',
+        //             text: `Order ${orderId} status updated to ${status}`,
+        //             icon: 'success'
+        //         }).then(() => {
+        //             location.reload(); // Reload the page
+        //         });
+
+        //     } catch (error) {
+        //         console.error('Error updating order status:', error);
+        //         Swal.fire({
+        //             title: 'Error',
+        //             text: `Failed to update order status: ${error.message}`,
+        //             icon: 'error'
+        //         });
+        //     }
+        // }
+
+        async function updateOrderStatus(orderId, status, event) {
+            event.stopPropagation(); // Prevent row click event
+            try {
+                const response = await fetch(`https://queen-s-footwear-default-rtdb.firebaseio.com/orders/${orderId}.json`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ progress: status })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update order status');
+                }
+
+                // Update the class of the row based on the new status
+                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                if (row) {
+                    row.classList.remove('red-tr', 'green-tr', 'yellow-tr');
+                    if (status === 'accepted') {
+                        row.classList.add('green-tr');
+                    } else if (status === 'notaccepted') {
+                        row.classList.add('red-tr');
+                    } else {
+                        row.classList.add('yellow-tr');
+                    }
+                }
+
+                Swal.fire({
+                    title: 'Success',
+                    text: `Order ${orderId} status updated to ${status}`,
+                    icon: 'success'
+                });
+
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: `Failed to update order status: ${error.message}`,
+                    icon: 'error'
+                });
+            }
+        }
+
+    </script>
+
+
+</body>
+
+</html>
