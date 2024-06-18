@@ -703,8 +703,9 @@ section {
 }
 
 .input-wrapper button {
-  width: 44px;
-  height: -webkit-fill-available;
+      width: 44px;
+    height: 49px;
+  /* height: -webkit-fill-available; */
   padding: 15px;
   position: absolute;
   top: 0;
