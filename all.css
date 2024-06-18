@@ -387,6 +387,7 @@ input {
 }
 
 .formbold-sub-btn {
+  height: 46px;
   position: relative;
   padding-right: 40px;
   /* Adjust to accommodate the spinner */
@@ -655,8 +656,8 @@ section {
   border: 2px solid #f3f3f3;
   border-top: 2px solid #3498db;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   animation: spin 1s linear infinite;
 }
 
@@ -702,6 +703,8 @@ section {
 }
 
 .input-wrapper button {
+  width: 44px;
+  height: -webkit-fill-available;
   padding: 15px;
   position: absolute;
   top: 0;
